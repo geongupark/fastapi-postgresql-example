@@ -12,3 +12,15 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+
+
+class MetaIntBase(BaseModel):
+    type: str
+    value: int
+
+
+class MetaInt(MetaIntBase):
+    id: int
+
+    class Config:
+        orm_mode = True
