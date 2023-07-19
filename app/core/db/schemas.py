@@ -24,3 +24,17 @@ class MetaInt(MetaIntBase):
 
     class Config:
         orm_mode = True
+
+
+class CommentBase(BaseModel):
+    nickname: str
+    password: str
+    content: str
+    sessionid: str
+
+
+class Comment(CommentBase):
+    id: int
+
+    class Config:
+        orm_mode = True

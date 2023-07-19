@@ -60,3 +60,35 @@ def update_meta_int_info(
     session.refresh(meta_int_info)
 
     return meta_int_info
+
+
+def create_comment(session: Session, comment: schemas.CommentBase) -> models.Comments:
+    db_user = models.Comments(
+        nickname=comment.nickname,
+        password=comment.password,
+        content=comment.content,
+        sessionid=comment.sessionid,
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+
+    return db_user
+
+
+def update_comment_info(
+        session: Session, comment_id: int, info_update) -> models.Comments:
+    comment_id_info = session.query(models.Comments).get(comment_id)
+
+    if comment_id_info is None:
+        raise HTTPException(status_code=404, detail="ID에 해당하는 User가 없습니다.")
+
+    comment_id_info.nickname = info_update.nickname
+    comment_id_info.password = info_update.password
+    comment_id_info.content = info_update.content
+    comment_id_info.sessionid = info_update.sessionid
+
+    session.commit()
+    session.refresh(comment_id_info)
+
+    return comment_id_info

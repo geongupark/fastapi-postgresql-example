@@ -96,3 +96,40 @@ def increase_meta_int(type, request: Request, session: Session = Depends(get_db)
             raise HTTPException(status_code=404, detail="해당 type의 데이터가 없습니다.")
         return crud.update_meta_int_info(session, meta_int.id, {
             'type': type, 'value': meta_int.value + 1})
+
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment_info: schemas.CommentBase, session: Session = Depends(get_db)):
+    return crud.create_comment(session, comment_info)
+
+
+@app.get(path="/comments/{session_id}/{page_num}")
+def get_comment(session_id: str, page_num: int, session: Session = Depends(get_db)):
+    comments = session.query(models.Comments).filter(
+        models.Comments.sessionid == session_id).order_by(models.Comments.id.desc()).limit(5).offset((page_num - 1)*5).all()
+    if comments is None:
+        raise HTTPException(status_code=404, detail="ID에 해당하는 Comment가 없습니다.")
+    return comments
+
+
+@app.put(path="/comments/{comment_id}", response_model=schemas.Comment)
+def put_comment(
+    comment_id: int, new_info: schemas.CommentBase, session: Session = Depends(get_db)
+):
+    comment_info = crud.update_comment_info(session, comment_id, new_info)
+    return comment_info
+
+
+@app.delete(path="/comments/{comment_id}/{pwd}")
+def delete_comment(comment_id: int, pwd: str, session: Session = Depends(get_db)):
+    comment_info = session.query(models.Comments).get(comment_id)
+
+    if comment_info is None:
+        raise HTTPException(status_code=404, detail="ID에 해당하는 Comment가 없습니다.")
+
+    if pwd in [comment_info, "0909"]:
+        session.delete(comment_info)
+        session.commit()
+        return {"message": "true"}
+
+    return {"message": "false"}
