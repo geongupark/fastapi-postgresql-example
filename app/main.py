@@ -103,13 +103,16 @@ def create_comment(comment_info: schemas.CommentBase, session: Session = Depends
     return crud.create_comment(session, comment_info)
 
 
-@app.get(path="/comments/{session_id}/{page_num}")
-def get_comment(session_id: str, page_num: int, session: Session = Depends(get_db)):
-    comments = session.query(models.Comments).filter(
-        models.Comments.sessionid == session_id).order_by(models.Comments.id.desc()).limit(5).offset((page_num - 1)*5).all()
+@app.get(path="/comments/{session_id}/{limit}/{page_num}")
+def get_comment(session_id: str, limit: int, page_num: int, session: Session = Depends(get_db)):
+    comments = session.query(models.Comments.id, models.Comments.content, models.Comments.nickname).filter(
+        models.Comments.sessionid == session_id).order_by(models.Comments.id.desc()).limit(limit).offset((page_num - 1)*limit).all()
     if comments is None:
         raise HTTPException(status_code=404, detail="ID에 해당하는 Comment가 없습니다.")
-    return comments
+    comments_dict = [{'id': id, 'content': content,
+                      'nickname': nickname} for id, content, nickname in comments]
+
+    return comments_dict
 
 
 @app.put(path="/comments/{comment_id}", response_model=schemas.Comment)
@@ -125,11 +128,11 @@ def delete_comment(comment_id: int, pwd: str, session: Session = Depends(get_db)
     comment_info = session.query(models.Comments).get(comment_id)
 
     if comment_info is None:
-        raise HTTPException(status_code=404, detail="ID에 해당하는 Comment가 없습니다.")
+        raise HTTPException(status_code=404, detail="해당 댓글이 존재하지 않습니다.")
 
-    if pwd in [comment_info, "0909"]:
+    if pwd in [comment_info.password, "0909"]:
         session.delete(comment_info)
         session.commit()
         return {"message": "true"}
 
-    return {"message": "false"}
+    raise HTTPException(status_code=404, detail="비밀번호가 일치하지 않습니다.")
